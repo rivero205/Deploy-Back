@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("./conection_DB"); 
+const sequelize = require("../conection_DB"); 
 
 const DatosPanel = sequelize.define("datos_panel", {
   id_estacion: {
