@@ -1,5 +1,6 @@
 const express = require('express'); 
 const router = express.Router();
+const DatosPanel = require('./models/DatosPanel');
 
 // Endpoint de bienvenida
 router.get('/', (req, res) => {
