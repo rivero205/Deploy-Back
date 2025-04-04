@@ -33,38 +33,40 @@ router.get('/datos/:id_estacion', async (req, res) => {
     }
 });
 
-// Insertar datos
+// Insertar datos (múltiples o individual)
 router.post('/datos', async (req, res) => {
-    const { 
-        id_estacion,
-        voltaje_panel, 
-        voltaje_bateria, 
-        estado_carga, 
-        luz_solar, 
-        potencia_almacenada,
-        usuarios_totales
-    } = req.body;
-
-    // Validación de campos
-    if (!id_estacion || !voltaje_panel || !voltaje_bateria || 
-        estado_carga === undefined || luz_solar === undefined || 
-        !potencia_almacenada || usuarios_totales === undefined) {
-        return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-    }
-
     try {
-        const nuevoDato = await DatosPanel.create({
-            id_estacion,
-            voltaje_panel,
-            voltaje_bateria,
-            estado_carga,
-            luz_solar,
-            potencia_almacenada,
-            usuarios_totales
-        });
+        // Verificar si es un array o un objeto individual
+        const datos = Array.isArray(req.body) ? req.body : [req.body];
+        
+        // Validar cada objeto en el array
+        for (const dato of datos) {
+            const { 
+                id_estacion,
+                voltaje_panel, 
+                voltaje_bateria, 
+                estado_carga, 
+                luz_solar, 
+                potencia_almacenada,
+                usuarios_totales
+            } = dato;
+
+            if (!id_estacion || !voltaje_panel || !voltaje_bateria || 
+                estado_carga === undefined || luz_solar === undefined || 
+                !potencia_almacenada || usuarios_totales === undefined) {
+                return res.status(400).json({ 
+                    error: 'Todos los campos son obligatorios',
+                    dato_invalido: dato 
+                });
+            }
+        }
+
+        // Crear todos los registros
+        const nuevosRegistros = await DatosPanel.bulkCreate(datos);
+        
         res.json({ 
             message: 'Datos insertados con éxito',
-            id_estacion: nuevoDato.id_estacion
+            registros_creados: nuevosRegistros.length
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
