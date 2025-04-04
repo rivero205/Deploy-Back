@@ -1,6 +1,7 @@
 const express = require('express'); 
 const router = express.Router();
 const DatosPanel = require('./models/DatosPanel');
+const { Op } = require('sequelize');
 
 // Endpoint de bienvenida
 router.get('/', (req, res) => {
@@ -87,6 +88,48 @@ router.get('/ultimas-lecturas', async (req, res) => {
             }, {})
         );
         res.json(ultimas);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Borrar datos
+router.delete('/datos/:id_estacion', async (req, res) => {
+    const { id_estacion } = req.params;
+    const { fecha_inicio, fecha_fin } = req.query;
+
+    try {
+        let whereClause = { id_estacion };
+
+        // Si se proporcionan fechas, agregar al filtro
+        if (fecha_inicio && fecha_fin) {
+            whereClause.fecha_registro = {
+                [Op.between]: [new Date(fecha_inicio), new Date(fecha_fin)]
+            };
+        } else if (fecha_inicio) {
+            whereClause.fecha_registro = {
+                [Op.gte]: new Date(fecha_inicio)
+            };
+        } else if (fecha_fin) {
+            whereClause.fecha_registro = {
+                [Op.lte]: new Date(fecha_fin)
+            };
+        }
+
+        const registrosBorrados = await DatosPanel.destroy({
+            where: whereClause
+        });
+
+        if (registrosBorrados === 0) {
+            return res.status(404).json({ 
+                message: 'No se encontraron registros para borrar con los criterios especificados' 
+            });
+        }
+
+        res.json({ 
+            message: 'Registros borrados exitosamente',
+            registros_borrados: registrosBorrados
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
